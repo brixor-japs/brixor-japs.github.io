@@ -1,0 +1,57 @@
+name: Publicar landing
+on:
+  workflow_dispatch:
+    inputs:
+      sha_probado:
+        description: SHA completo de main verificado en local
+        required: true
+        type: string
+      evidencia_local:
+        description: Comando y resultado de verificación local
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  validar-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verificar versión autorizada
+        env:
+          SHA_PROBADO: ${{ inputs.sha_probado }}
+          EVIDENCIA_LOCAL: ${{ inputs.evidencia_local }}
+          RAMA_RELEASE: refs/heads/main
+        run: |
+          test "$GITHUB_REF" = "$RAMA_RELEASE"
+          test "$SHA_PROBADO" = "$GITHUB_SHA"
+          test -n "$EVIDENCIA_LOCAL"
+          printf '%s\n' "$EVIDENCIA_LOCAL" >> "$GITHUB_STEP_SUMMARY"
+  publicar:
+    needs: validar-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - name: Publicar
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verificar salud
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors "$PAGE_URL" -o /dev/null
