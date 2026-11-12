@@ -1,6 +1,6 @@
 # Brixor · sitio público
 
-Landing estática de Brixor. HTML y CSS, sin dependencias ni servicios de backend.
+Landing estática e independiente de Brixor. HTML y CSS, sin dependencias ni servicios de backend. Todos los enlaces de navegación permanecen dentro de la landing; no enlazar a la aplicación, inicio de sesión ni registro.
 
 ## Desarrollo
 
